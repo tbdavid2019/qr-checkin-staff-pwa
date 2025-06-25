@@ -1,0 +1,450 @@
+/* Scanner Page Styles */
+
+#scanner-page {
+    background: var(--gray-900);
+    color: var(--white);
+}
+
+.scanner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.scanner-header h2 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--white);
+    flex: 1;
+    text-align: center;
+}
+
+.scanner-header .back-btn {
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.scanner-header .back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.scanner-status {
+    font-size: var(--font-size-sm);
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.5);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+}
+
+.scanner-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.scanner-viewport {
+    flex: 1;
+    position: relative;
+    background: var(--gray-900);
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scanner-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0;
+}
+
+.scanner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.scanner-frame {
+    width: 250px;
+    height: 250px;
+    border: 3px solid var(--white);
+    border-radius: var(--radius-lg);
+    position: relative;
+    background: transparent;
+    animation: scannerPulse 2s ease-in-out infinite;
+}
+
+.scanner-frame::before,
+.scanner-frame::after {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--primary-color);
+}
+
+.scanner-frame::before {
+    top: -3px;
+    left: -3px;
+    border-right: none;
+    border-bottom: none;
+    border-top-left-radius: var(--radius-lg);
+}
+
+.scanner-frame::after {
+    bottom: -3px;
+    right: -3px;
+    border-left: none;
+    border-top: none;
+    border-bottom-right-radius: var(--radius-lg);
+}
+
+@keyframes scannerPulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.05);
+    }
+}
+
+/* Scanner Result */
+.scanner-result {
+    background: var(--white);
+    color: var(--gray-900);
+    margin: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.ticket-info {
+    padding: var(--spacing-lg);
+}
+
+.ticket-info h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    color: var(--gray-900);
+    text-align: center;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item label {
+    font-weight: 500;
+    color: var(--gray-600);
+    font-size: var(--font-size-sm);
+}
+
+.info-item span {
+    font-weight: 600;
+    color: var(--gray-900);
+    text-align: right;
+    max-width: 60%;
+    word-break: break-word;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-badge.valid {
+    background: var(--success-color);
+    color: var(--white);
+}
+
+.status-badge.used {
+    background: var(--error-color);
+    color: var(--white);
+}
+
+.status-badge.invalid {
+    background: var(--warning-color);
+    color: var(--white);
+}
+
+.scanner-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: var(--gray-50);
+}
+
+.scanner-actions .btn {
+    flex: 1;
+    font-size: var(--font-size-lg);
+    padding: var(--spacing-md);
+    font-weight: 600;
+}
+
+/* Scanner Controls */
+.scanner-controls {
+    position: absolute;
+    bottom: var(--spacing-xl);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: var(--spacing-lg);
+    z-index: 10;
+}
+
+.control-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    color: var(--white);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xl);
+    transition: all var(--transition-fast);
+}
+
+.control-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.1);
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+.control-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Error States */
+.scanner-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--white);
+    background: rgba(0, 0, 0, 0.8);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    max-width: 300px;
+}
+
+.scanner-error h3 {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-md);
+    color: var(--error-color);
+}
+
+.scanner-error p {
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.6;
+}
+
+.scanner-error .btn {
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+}
+
+/* Permission Request */
+.camera-permission {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--white);
+}
+
+.camera-permission .camera-icon {
+    font-size: 4rem;
+    margin-bottom: var(--spacing-lg);
+    opacity: 0.7;
+}
+
+.camera-permission h3 {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-md);
+}
+
+.camera-permission p {
+    margin-bottom: var(--spacing-xl);
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+.camera-permission .btn {
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    padding: var(--spacing-md) var(--spacing-xl);
+}
+
+/* Scanning Animation */
+.scanning-line {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--primary-color),
+        transparent
+    );
+    animation: scanLine 2s ease-in-out infinite;
+}
+
+@keyframes scanLine {
+    0% {
+        top: 20px;
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        top: calc(100% - 22px);
+        opacity: 0;
+    }
+}
+
+/* Success Feedback */
+.scan-success {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--success-color);
+    color: var(--white);
+    padding: var(--spacing-lg);
+    border-radius: 50%;
+    font-size: 2rem;
+    animation: successPulse 0.6s ease-out;
+}
+
+@keyframes successPulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .scanner-result {
+        background: var(--gray-800);
+        color: var(--gray-100);
+    }
+    
+    .ticket-info h3 {
+        color: var(--gray-100);
+    }
+    
+    .info-item {
+        border-bottom-color: var(--gray-700);
+    }
+    
+    .info-item label {
+        color: var(--gray-400);
+    }
+    
+    .info-item span {
+        color: var(--gray-100);
+    }
+    
+    .scanner-actions {
+        background: var(--gray-800);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 375px) {
+    .scanner-frame {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .scanner-controls {
+        bottom: var(--spacing-lg);
+        gap: var(--spacing-md);
+    }
+    
+    .control-btn {
+        width: 50px;
+        height: 50px;
+        font-size: var(--font-size-lg);
+    }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+    .scanner-controls {
+        bottom: var(--spacing-md);
+    }
+    
+    .scanner-frame {
+        width: 150px;
+        height: 150px;
+    }
+}

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>QR Check-in Staff</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="QR Check-in System 員工掃碼簽到應用">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="QR Staff">
+    
+    <!-- PWA Links -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/scanner.css">
+    <link rel="stylesheet" href="css/stats.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>正在載入...</p>
+    </div>
+
+    <!-- Network Status -->
+    <div id="network-status" class="network-status hidden">
+        <span id="network-indicator" class="network-indicator"></span>
+        <span id="network-text">離線模式</span>
+    </div>
+
+    <!-- Login Page -->
+    <div id="login-page" class="page hidden">
+        <div class="login-container">
+            <div class="logo">
+                <h1>QR Check-in</h1>
+                <p>員工簽到系統</p>
+            </div>
+            
+            <form id="login-form" class="login-form">
+                <div class="input-group">
+                    <label for="username">用戶名</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="password">密碼</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <div class="divider">
+                    <span>或</span>
+                </div>
+                
+                <div class="input-group">
+                    <label for="login-code">登入碼</label>
+                    <input type="text" id="login-code" name="login_code" placeholder="輸入登入碼">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="login-btn">
+                    <span class="btn-text">登入</span>
+                    <span class="btn-loading hidden">
+                        <div class="mini-spinner"></div>
+                        登入中...
+                    </span>
+                </button>
+            </form>
+            
+            <div id="login-error" class="error-message hidden"></div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-page" class="page hidden">
+        <header class="header">
+            <div class="header-left">
+                <h2 id="staff-name">員工姓名</h2>
+                <span id="selected-event" class="selected-event">未選擇活動</span>
+            </div>
+            <div class="header-right">
+                <button id="sync-btn" class="icon-btn" title="手動同步">
+                    <span class="sync-icon">🔄</span>
+                </button>
+                <button id="logout-btn" class="icon-btn" title="登出">
+                    <span class="logout-icon">🚪</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            <!-- Event Selection -->
+            <section id="event-section" class="card">
+                <h3>選擇活動</h3>
+                <div id="events-loading" class="loading-text">載入活動中...</div>
+                <div id="events-list" class="events-list hidden"></div>
+                <button id="download-data-btn" class="btn btn-secondary hidden" disabled>
+                    <span class="btn-text">下載活動資料</span>
+                    <span class="btn-loading hidden">
+                        <div class="mini-spinner"></div>
+                        下載中...
+                    </span>
+                </button>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="quick-actions">
+                <button id="scan-btn" class="action-btn scan-btn" disabled>
+                    <div class="action-icon">📷</div>
+                    <span>開始掃碼</span>
+                </button>
+                
+                <button id="stats-btn" class="action-btn stats-btn" disabled>
+                    <div class="action-icon">📊</div>
+                    <span>查看統計</span>
+                </button>
+            </section>
+
+            <!-- Status Cards -->
+            <section class="status-cards">
+                <div class="status-card">
+                    <div class="status-number" id="total-tickets">0</div>
+                    <div class="status-label">總票券</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-number" id="checked-in">0</div>
+                    <div class="status-label">已簽到</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-number" id="pending-sync">0</div>
+                    <div class="status-label">待同步</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Scanner Page -->
+    <div id="scanner-page" class="page hidden">
+        <header class="scanner-header">
+            <button id="back-from-scanner" class="back-btn">← 返回</button>
+            <h2>掃描 QR Code</h2>
+            <div class="scanner-status" id="scanner-status">準備掃描</div>
+        </header>
+
+        <div class="scanner-container">
+            <div id="scanner-viewport" class="scanner-viewport">
+                <video id="scanner-video" class="scanner-video" autoplay playsinline></video>
+                <div class="scanner-overlay">
+                    <div class="scanner-frame"></div>
+                </div>
+            </div>
+            
+            <div id="scanner-result" class="scanner-result hidden">
+                <div class="ticket-info">
+                    <h3>票券資訊</h3>
+                    <div class="info-item">
+                        <label>持票人:</label>
+                        <span id="holder-name">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>活動:</label>
+                        <span id="event-name">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>票券狀態:</label>
+                        <span id="ticket-status" class="status-badge">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>票券描述:</label>
+                        <span id="ticket-description">-</span>
+                    </div>
+                </div>
+                
+                <div class="scanner-actions">
+                    <button id="confirm-checkin" class="btn btn-success">
+                        <span class="btn-text">確認簽到</span>
+                        <span class="btn-loading hidden">
+                            <div class="mini-spinner"></div>
+                            處理中...
+                        </span>
+                    </button>
+                    <button id="cancel-checkin" class="btn btn-secondary">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="scanner-controls">
+            <button id="toggle-flash" class="control-btn" title="切換手電筒">
+                <span class="flash-icon">🔦</span>
+            </button>
+            <button id="switch-camera" class="control-btn" title="切換鏡頭">
+                <span class="camera-icon">📷</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Page -->
+    <div id="stats-page" class="page hidden">
+        <header class="stats-header">
+            <button id="back-from-stats" class="back-btn">← 返回</button>
+            <h2>簽到統計</h2>
+            <button id="refresh-stats" class="icon-btn">
+                <span class="refresh-icon">🔄</span>
+            </button>
+        </header>
+
+        <div class="stats-content">
+            <!-- Summary -->
+            <section class="stats-summary">
+                <div class="summary-card">
+                    <div class="summary-number" id="stats-total">0</div>
+                    <div class="summary-label">總票券</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-number" id="stats-checked">0</div>
+                    <div class="summary-label">已簽到</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-number" id="stats-pending">0</div>
+                    <div class="summary-label">未簽到</div>
+                </div>
+            </section>
+
+            <!-- Tabs -->
+            <div class="stats-tabs">
+                <button class="tab-btn active" data-tab="checked">已簽到</button>
+                <button class="tab-btn" data-tab="pending">未簽到</button>
+                <button class="tab-btn" data-tab="offline">離線記錄</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <div id="checked-tab" class="tab-pane active">
+                    <div id="checked-list" class="ticket-list"></div>
+                </div>
+                <div id="pending-tab" class="tab-pane">
+                    <div id="pending-list" class="ticket-list"></div>
+                </div>
+                <div id="offline-tab" class="tab-pane">
+                    <div id="offline-list" class="ticket-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-title">確認操作</h3>
+            <p id="modal-message">確定要執行此操作嗎？</p>
+            <div class="modal-actions">
+                <button id="modal-confirm" class="btn btn-primary">確認</button>
+                <button id="modal-cancel" class="btn btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="libs/qr-scanner.min.js"></script>
+    <!-- Scripts -->
+    <script src="libs/qr-scanner.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/sync.js"></script>
+    <script src="js/scanner.js"></script>
+    <script src="js/stats.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => {
+                    console.log('Service Worker registered:', registration);
+                })
+                .catch(error => {
+                    console.error('Service Worker registration failed:', error);
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="192" height="192" rx="24" fill="#2563eb"/>
+  
+  <!-- QR Code Pattern -->
+  <g fill="#ffffff">
+    <!-- Top Left Corner -->
+    <rect x="24" y="24" width="24" height="24"/>
+    <rect x="48" y="24" width="12" height="12"/>
+    <rect x="48" y="48" width="12" height="12"/>
+    <rect x="24" y="48" width="12" height="12"/>
+    <rect x="36" y="36" width="12" height="12"/>
+    
+    <!-- Top Right Corner -->
+    <rect x="144" y="24" width="24" height="24"/>
+    <rect x="132" y="24" width="12" height="12"/>
+    <rect x="132" y="48" width="12" height="12"/>
+    <rect x="156" y="48" width="12" height="12"/>
+    <rect x="144" y="36" width="12" height="12"/>
+    
+    <!-- Bottom Left Corner -->
+    <rect x="24" y="144" width="24" height="24"/>
+    <rect x="48" y="144" width="12" height="12"/>
+    <rect x="48" y="156" width="12" height="12"/>
+    <rect x="24" y="156" width="12" height="12"/>
+    <rect x="36" y="144" width="12" height="12"/>
+    
+    <!-- Center Pattern -->
+    <rect x="72" y="72" width="48" height="48"/>
+    <rect x="84" y="84" width="24" height="24"/>
+    
+    <!-- Data Dots -->
+    <rect x="60" y="36" width="12" height="12"/>
+    <rect x="84" y="36" width="12" height="12"/>
+    <rect x="108" y="36" width="12" height="12"/>
+    <rect x="60" y="60" width="12" height="12"/>
+    <rect x="132" y="60" width="12" height="12"/>
+    <rect x="156" y="60" width="12" height="12"/>
+    <rect x="60" y="132" width="12" height="12"/>
+    <rect x="84" y="132" width="12" height="12"/>
+    <rect x="108" y="132" width="12" height="12"/>
+    <rect x="132" y="132" width="12" height="12"/>
+    <rect x="156" y="132" width="12" height="12"/>
+    <rect x="144" y="156" width="12" height="12"/>
+    <rect x="132" y="156" width="12" height="12"/>
+  </g>
+  
+  <!-- Staff Badge -->
+  <circle cx="160" cy="32" r="16" fill="#fbbf24"/>
+  <path d="M160 26 L166 38 L154 38 Z" fill="#2563eb"/>
+</svg>

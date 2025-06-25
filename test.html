@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Staff PWA - Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 3px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #console-log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>QR Check-in Staff PWA - 測試頁面</h1>
+    
+    <div class="test-section">
+        <h2>PWA 功能測試</h2>
+        <button onclick="testServiceWorker()">測試 Service Worker</button>
+        <button onclick="testManifest()">測試 PWA Manifest</button>
+        <button onclick="testLocalStorage()">測試本地儲存</button>
+        <button onclick="testIndexedDB()">測試 IndexedDB</button>
+        <div id="pwa-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>API 模組測試</h2>
+        <button onclick="testAPIModule()">測試 API 模組</button>
+        <button onclick="testAuthModule()">測試認證模組</button>
+        <button onclick="testStorageModule()">測試儲存模組</button>
+        <button onclick="testSyncModule()">測試同步模組</button>
+        <div id="api-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>QR Scanner 測試</h2>
+        <button onclick="testQRScanner()">測試 QR Scanner 庫</button>
+        <button onclick="testScannerModule()">測試掃描模組</button>
+        <div id="scanner-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>統計模組測試</h2>
+        <button onclick="testStatsModule()">測試統計模組</button>
+        <div id="stats-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>控制台日誌</h2>
+        <button onclick="clearConsole()">清除日誌</button>
+        <div id="console-log"></div>
+    </div>
+
+    <!-- Load all modules -->
+    <script src="libs/qr-scanner.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/sync.js"></script>
+    <script src="js/scanner.js"></script>
+    <script src="js/stats.js"></script>
+
+    <script>
+        // Console logging override
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logContainer = document.getElementById('console-log');
+
+        function addToLog(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.style.color = type === 'error' ? 'red' : 'black';
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '), 'log');
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
+
+        function showResult(containerId, message, type = 'success') {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.textContent = message;
+            container.appendChild(result);
+        }
+
+        function clearResults(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        function clearConsole() {
+            logContainer.innerHTML = '';
+        }
+
+        // PWA Tests
+        async function testServiceWorker() {
+            clearResults('pwa-results');
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        showResult('pwa-results', 'Service Worker 已註冊', 'success');
+                    } else {
+                        showResult('pwa-results', 'Service Worker 未註冊', 'warning');
+                    }
+                } else {
+                    showResult('pwa-results', '瀏覽器不支援 Service Worker', 'error');
+                }
+            } catch (error) {
+                showResult('pwa-results', `Service Worker 測試失敗: ${error.message}`, 'error');
+            }
+        }
+
+        async function testManifest() {
+            try {
+                const response = await fetch('manifest.json');
+                const manifest = await response.json();
+                showResult('pwa-results', `Manifest 載入成功: ${manifest.name}`, 'success');
+            } catch (error) {
+                showResult('pwa-results', `Manifest 載入失敗: ${error.message}`, 'error');
+            }
+        }
+
+        function testLocalStorage() {
+            try {
+                localStorage.setItem('test', 'test-value');
+                const value = localStorage.getItem('test');
+                if (value === 'test-value') {
+                    showResult('pwa-results', 'LocalStorage 可用', 'success');
+                    localStorage.removeItem('test');
+                } else {
+                    showResult('pwa-results', 'LocalStorage 測試失敗', 'error');
+                }
+            } catch (error) {
+                showResult('pwa-results', `LocalStorage 不可用: ${error.message}`, 'error');
+            }
+        }
+
+        async function testIndexedDB() {
+            try {
+                if ('indexedDB' in window) {
+                    showResult('pwa-results', 'IndexedDB 可用', 'success');
+                } else {
+                    showResult('pwa-results', 'IndexedDB 不可用', 'error');
+                }
+            } catch (error) {
+                showResult('pwa-results', `IndexedDB 測試失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // API Module Tests
+        async function testAPIModule() {
+            clearResults('api-results');
+            try {
+                if (typeof API !== 'undefined') {
+                    showResult('api-results', 'API 模組載入成功', 'success');
+                    
+                    // Test API configuration
+                    if (API.baseURL) {
+                        showResult('api-results', `API Base URL: ${API.baseURL}`, 'success');
+                    }
+                } else {
+                    showResult('api-results', 'API 模組未載入', 'error');
+                }
+            } catch (error) {
+                showResult('api-results', `API 模組測試失敗: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAuthModule() {
+            try {
+                if (typeof Auth !== 'undefined') {
+                    showResult('api-results', 'Auth 模組載入成功', 'success');
+                } else {
+                    showResult('api-results', 'Auth 模組未載入', 'error');
+                }
+            } catch (error) {
+                showResult('api-results', `Auth 模組測試失敗: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStorageModule() {
+            try {
+                if (typeof Storage !== 'undefined') {
+                    showResult('api-results', 'Storage 模組載入成功', 'success');
+                    
+                    // Test storage initialization
+                    await Storage.init();
+                    showResult('api-results', 'Storage 初始化成功', 'success');
+                } else {
+                    showResult('api-results', 'Storage 模組未載入', 'error');
+                }
+            } catch (error) {
+                showResult('api-results', `Storage 模組測試失敗: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSyncModule() {
+            try {
+                if (typeof Sync !== 'undefined') {
+                    showResult('api-results', 'Sync 模組載入成功', 'success');
+                } else {
+                    showResult('api-results', 'Sync 模組未載入', 'error');
+                }
+            } catch (error) {
+                showResult('api-results', `Sync 模組測試失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // Scanner Tests
+        function testQRScanner() {
+            clearResults('scanner-results');
+            try {
+                if (typeof QrScanner !== 'undefined') {
+                    showResult('scanner-results', 'QR Scanner 庫載入成功', 'success');
+                    
+                    // Test camera support
+                    if (QrScanner.hasCamera()) {
+                        showResult('scanner-results', '相機支援檢測通過', 'success');
+                    } else {
+                        showResult('scanner-results', '未檢測到相機或不支援', 'warning');
+                    }
+                } else {
+                    showResult('scanner-results', 'QR Scanner 庫未載入', 'error');
+                }
+            } catch (error) {
+                showResult('scanner-results', `QR Scanner 測試失敗: ${error.message}`, 'error');
+            }
+        }
+
+        function testScannerModule() {
+            try {
+                if (typeof Scanner !== 'undefined') {
+                    showResult('scanner-results', 'Scanner 模組載入成功', 'success');
+                } else {
+                    showResult('scanner-results', 'Scanner 模組未載入', 'error');
+                }
+            } catch (error) {
+                showResult('scanner-results', `Scanner 模組測試失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // Stats Module Tests
+        function testStatsModule() {
+            clearResults('stats-results');
+            try {
+                if (typeof Stats !== 'undefined') {
+                    showResult('stats-results', 'Stats 模組載入成功', 'success');
+                } else {
+                    showResult('stats-results', 'Stats 模組未載入', 'error');
+                }
+            } catch (error) {
+                showResult('stats-results', `Stats 模組測試失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // Run initial tests on page load
+        window.addEventListener('load', () => {
+            console.log('測試頁面載入完成');
+            
+            // Run basic module tests
+            setTimeout(() => {
+                testAPIModule();
+                testAuthModule();
+                testStorageModule();
+                testSyncModule();
+                testQRScanner();
+                testScannerModule();
+                testStatsModule();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
