@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>QR Check-in Staff</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="QR Check-in System 員工掃碼簽到應用">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="QR Staff">
+    
+    <!-- PWA Links -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" sizes="192x192" href="icons/icon-192.svg">
+    <link rel="apple-touch-icon" href="icons/icon-192.svg">
+    
+    <!-- Styles - 逐個載入並處理錯誤 -->
+    <style>
+        /* 內嵌基礎樣式以防 CSS 載入失敗 */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            margin: 0; 
+            background: #f5f5f5; 
+        }
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden { display: none !important; }
+        .page {
+            min-height: 100vh;
+            max-width: 480px;
+            margin: 0 auto;
+            background: white;
+        }
+        .error-state {
+            padding: 20px;
+            text-align: center;
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>正在載入...</p>
+        <p id="loading-status" style="font-size: 12px; color: #666;"></p>
+    </div>
+
+    <!-- Network Status -->
+    <div id="network-status" class="network-status hidden">
+        <span id="network-indicator" class="network-indicator"></span>
+        <span id="network-text">離線模式</span>
+    </div>
+
+    <!-- Login Page -->
+    <div id="login-page" class="page hidden">
+        <div class="login-container">
+            <div class="logo">
+                <h1>QR Check-in</h1>
+                <p>員工簽到系統</p>
+            </div>
+            
+            <form id="login-form" class="login-form">
+                <div class="input-group">
+                    <label for="username">用戶名</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="password">密碼</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <div class="divider">
+                    <span>或</span>
+                </div>
+                
+                <div class="input-group">
+                    <label for="login-code">登入碼</label>
+                    <input type="text" id="login-code" name="login_code" placeholder="輸入登入碼">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="login-btn">
+                    <span class="btn-text">登入</span>
+                    <span class="btn-loading hidden">
+                        <div class="mini-spinner"></div>
+                        登入中...
+                    </span>
+                </button>
+            </form>
+            
+            <div id="login-error" class="error-message hidden"></div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-page" class="page hidden">
+        <header class="header">
+            <div class="header-left">
+                <h2 id="staff-name">員工姓名</h2>
+                <span id="selected-event" class="selected-event">未選擇活動</span>
+            </div>
+            <div class="header-right">
+                <button id="sync-btn" class="icon-btn" title="手動同步">
+                    <span class="sync-icon">🔄</span>
+                </button>
+                <button id="logout-btn" class="icon-btn" title="登出">
+                    <span class="logout-icon">🚪</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            <!-- Event Selection -->
+            <section id="event-section" class="card">
+                <h3>選擇活動</h3>
+                <div id="events-loading" class="loading-text">載入活動中...</div>
+                <div id="events-list" class="events-list hidden"></div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="quick-actions">
+                <button id="scan-btn" class="action-btn scan-btn" disabled>
+                    <div class="action-icon">📷</div>
+                    <span>開始掃碼</span>
+                </button>
+                
+                <button id="stats-btn" class="action-btn stats-btn" disabled>
+                    <div class="action-icon">📊</div>
+                    <span>查看統計</span>
+                </button>
+            </section>
+
+            <!-- Status Cards -->
+            <section class="status-cards">
+                <div class="status-card">
+                    <div class="status-number" id="total-tickets">0</div>
+                    <div class="status-label">總票券</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-number" id="checked-in">0</div>
+                    <div class="status-label">已簽到</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-number" id="pending-sync">0</div>
+                    <div class="status-label">待同步</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        // 載入狀態管理
+        const loadingStatus = document.getElementById('loading-status');
+        let loadedModules = {};
+        
+        function updateLoadingStatus(message) {
+            if (loadingStatus) {
+                loadingStatus.textContent = message;
+            }
+            console.log('[Loading]', message);
+        }
+
+        // 錯誤處理
+        window.addEventListener('error', (e) => {
+            console.error('Global Error:', e.error);
+            updateLoadingStatus(`錯誤: ${e.message}`);
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Unhandled Promise:', e.reason);
+            updateLoadingStatus(`Promise 錯誤: ${e.reason}`);
+        });
+
+        // 動態載入 CSS
+        function loadCSS(href) {
+            return new Promise((resolve, reject) => {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = href;
+                link.onload = () => resolve();
+                link.onerror = () => reject(new Error(`Failed to load CSS: ${href}`));
+                document.head.appendChild(link);
+            });
+        }
+
+        // 動態載入 JavaScript
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+                document.body.appendChild(script);
+            });
+        }
+
+        // 安全的模組載入
+        async function loadModule(name, src, required = true) {
+            try {
+                updateLoadingStatus(`載入 ${name}...`);
+                await loadScript(src);
+                loadedModules[name] = true;
+                updateLoadingStatus(`✓ ${name} 載入成功`);
+                return true;
+            } catch (error) {
+                loadedModules[name] = false;
+                console.error(`Failed to load ${name}:`, error);
+                updateLoadingStatus(`✗ ${name} 載入失敗`);
+                
+                if (required) {
+                    throw error;
+                }
+                return false;
+            }
+        }
+
+        // 應用程式初始化
+        async function initApp() {
+            try {
+                updateLoadingStatus('開始初始化...');
+
+                // 1. 載入 CSS
+                updateLoadingStatus('載入樣式...');
+                try {
+                    await Promise.all([
+                        loadCSS('css/main.css'),
+                        loadCSS('css/login.css'),
+                        loadCSS('css/scanner.css'),
+                        loadCSS('css/stats.css')
+                    ]);
+                    updateLoadingStatus('✓ 樣式載入完成');
+                } catch (error) {
+                    console.warn('Some CSS failed to load:', error);
+                    updateLoadingStatus('⚠ 部分樣式載入失敗，使用基礎樣式');
+                }
+
+                // 2. 載入必需的 JavaScript 模組
+                await loadModule('Utils', 'js/utils.js', true);
+                await loadModule('Storage', 'js/storage.js', true);
+                await loadModule('API', 'js/api.js', true);
+                await loadModule('Auth', 'js/auth.js', true);
+
+                // 3. 載入可選模組
+                await loadModule('Sync', 'js/sync.js', false);
+
+                // 4. 初始化核心功能
+                updateLoadingStatus('初始化存儲...');
+                if (typeof Storage !== 'undefined') {
+                    await Storage.init();
+                }
+
+                updateLoadingStatus('載入認證狀態...');
+                if (typeof API !== 'undefined') {
+                    API.loadAuthToken();
+                }
+
+                // 5. 設置應用程式
+                updateLoadingStatus('設置應用程式...');
+                setupApp();
+
+                // 6. 檢查認證狀態
+                updateLoadingStatus('檢查登入狀態...');
+                const isAuthenticated = await checkAuthState();
+                
+                if (isAuthenticated) {
+                    await showDashboard();
+                } else {
+                    showLogin();
+                }
+
+                // 7. 完成載入
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                    updateLoadingStatus('應用程式已就緒');
+                }, 500);
+
+            } catch (error) {
+                console.error('App initialization failed:', error);
+                updateLoadingStatus(`初始化失敗: ${error.message}`);
+                
+                // 顯示錯誤頁面
+                document.getElementById('loading-screen').innerHTML = `
+                    <div class="error-state">
+                        <h3>載入失敗</h3>
+                        <p>${error.message}</p>
+                        <button onclick="location.reload()">重新載入</button>
+                    </div>
+                `;
+            }
+        }
+
+        // 設置應用程式
+        function setupApp() {
+            // 登入表單
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleLogin);
+            }
+
+            // 登出按鈕
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', handleLogout);
+            }
+        }
+
+        // 檢查認證狀態
+        async function checkAuthState() {
+            try {
+                if (typeof Auth !== 'undefined' && Auth.isAuthenticated()) {
+                    return await Auth.validateSession();
+                }
+                return false;
+            } catch (error) {
+                console.error('Auth state check failed:', error);
+                return false;
+            }
+        }
+
+        // 處理登入
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const loginBtn = document.getElementById('login-btn');
+            const errorDiv = document.getElementById('login-error');
+            
+            try {
+                // 設置載入狀態
+                setButtonLoading(loginBtn, true);
+                hideElement(errorDiv);
+                
+                const credentials = {
+                    username: formData.get('username'),
+                    password: formData.get('password'),
+                    loginCode: formData.get('login_code')
+                };
+                
+                if (typeof Auth === 'undefined') {
+                    throw new Error('認證模組未載入');
+                }
+                
+                const result = await Auth.login(credentials);
+                
+                if (result.success) {
+                    showToast(`歡迎，${result.staff.full_name}！`, 'success');
+                    await showDashboard();
+                }
+                
+            } catch (error) {
+                console.error('Login failed:', error);
+                showError(error.message, errorDiv);
+            } finally {
+                setButtonLoading(loginBtn, false);
+            }
+        }
+
+        // 處理登出
+        async function handleLogout() {
+            try {
+                if (typeof Auth !== 'undefined') {
+                    await Auth.logout();
+                }
+                showToast('已成功登出', 'info');
+                showLogin();
+            } catch (error) {
+                console.error('Logout failed:', error);
+                showError('登出失敗: ' + error.message);
+            }
+        }
+
+        // 顯示登入頁面
+        function showLogin() {
+            hideAllPages();
+            showPage('login');
+        }
+
+        // 顯示儀表板
+        async function showDashboard() {
+            hideAllPages();
+            showPage('dashboard');
+            
+            // 更新員工資訊
+            if (typeof Auth !== 'undefined') {
+                const staff = Auth.getCurrentStaff();
+                if (staff) {
+                    const nameElement = document.getElementById('staff-name');
+                    if (nameElement) {
+                        nameElement.textContent = staff.full_name || '員工';
+                    }
+                }
+            }
+        }
+
+        // 工具函數
+        function showPage(pageId) {
+            const page = document.getElementById(`${pageId}-page`);
+            if (page) {
+                page.classList.remove('hidden');
+            }
+        }
+
+        function hideAllPages() {
+            const pages = ['login', 'dashboard'];
+            pages.forEach(pageId => {
+                const page = document.getElementById(`${pageId}-page`);
+                if (page) {
+                    page.classList.add('hidden');
+                }
+            });
+        }
+
+        function showElement(element) {
+            if (element) {
+                element.classList.remove('hidden');
+            }
+        }
+
+        function hideElement(element) {
+            if (element) {
+                element.classList.add('hidden');
+            }
+        }
+
+        function setButtonLoading(button, loading) {
+            if (!button) return;
+            
+            const btnText = button.querySelector('.btn-text');
+            const btnLoading = button.querySelector('.btn-loading');
+            
+            if (loading) {
+                button.disabled = true;
+                if (btnText) btnText.style.display = 'none';
+                if (btnLoading) btnLoading.classList.remove('hidden');
+            } else {
+                button.disabled = false;
+                if (btnText) btnText.style.display = '';
+                if (btnLoading) btnLoading.classList.add('hidden');
+            }
+        }
+
+        function showError(message, container = null) {
+            if (container) {
+                container.textContent = message;
+                container.classList.remove('hidden');
+            } else {
+                showToast(message, 'error');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            console.log(`[Toast ${type}]`, message);
+            // 簡化的 toast 實現
+            const container = document.getElementById('toast-container');
+            if (container) {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                container.appendChild(toast);
+                
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 3000);
+            }
+        }
+
+        // 啟動應用程式
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

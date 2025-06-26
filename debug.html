@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>QR Check-in Staff Debug</title>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/login.css">
+    
+    <style>
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 300px;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 9999;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .debug-log {
+            margin: 2px 0;
+            padding: 2px;
+        }
+        .debug-success { color: green; }
+        .debug-error { color: red; }
+        .debug-info { color: blue; }
+        .debug-warning { color: orange; }
+    </style>
+</head>
+<body>
+    <!-- Debug Panel -->
+    <div id="debug-panel" class="debug-panel">
+        <h4>Debug Log</h4>
+        <div id="debug-log"></div>
+        <button onclick="clearDebugLog()">清除</button>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>正在載入 Debug 模式...</p>
+    </div>
+
+    <!-- Login Page -->
+    <div id="login-page" class="page hidden">
+        <div class="login-container">
+            <div class="logo">
+                <h1>QR Check-in Debug</h1>
+                <p>員工簽到系統</p>
+            </div>
+            
+            <form id="login-form" class="login-form">
+                <div class="input-group">
+                    <label for="username">用戶名</label>
+                    <input type="text" id="username" name="username" value="staff_1_3" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="password">密碼</label>
+                    <input type="password" id="password" name="password" value="password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="login-btn">
+                    <span class="btn-text">登入</span>
+                    <span class="btn-loading hidden">載入中...</span>
+                </button>
+            </form>
+            
+            <div id="login-error" class="error-message hidden"></div>
+        </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div id="dashboard-page" class="page hidden">
+        <header class="header">
+            <div class="header-left">
+                <h2 id="staff-name">員工姓名</h2>
+            </div>
+            <div class="header-right">
+                <button id="logout-btn" class="icon-btn">登出</button>
+            </div>
+        </header>
+        <div class="dashboard-content">
+            <h3>登入成功！</h3>
+            <p>主要功能正在開發中...</p>
+        </div>
+    </div>
+
+    <script>
+        // Debug 工具
+        function debugLog(message, type = 'info') {
+            console.log(`[DEBUG] ${message}`);
+            const logDiv = document.getElementById('debug-log');
+            if (logDiv) {
+                const entry = document.createElement('div');
+                entry.className = `debug-log debug-${type}`;
+                entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+                logDiv.appendChild(entry);
+                logDiv.scrollTop = logDiv.scrollHeight;
+            }
+        }
+
+        function clearDebugLog() {
+            document.getElementById('debug-log').innerHTML = '';
+        }
+
+        // 全域錯誤捕獲
+        window.addEventListener('error', (e) => {
+            debugLog(`JavaScript 錯誤: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            debugLog(`Promise 錯誤: ${e.reason}`, 'error');
+        });
+
+        debugLog('開始載入 Debug 版本', 'info');
+    </script>
+
+    <!-- 逐步載入和測試 JavaScript 檔案 -->
+    <script>
+        debugLog('載入 Utils...', 'info');
+    </script>
+    <script src="js/utils.js" onload="debugLog('Utils 載入成功', 'success')" onerror="debugLog('Utils 載入失敗', 'error')"></script>
+    
+    <script>
+        debugLog('載入 Storage...', 'info');
+    </script>
+    <script src="js/storage.js" onload="debugLog('Storage 載入成功', 'success')" onerror="debugLog('Storage 載入失敗', 'error')"></script>
+    
+    <script>
+        debugLog('載入 API...', 'info');
+    </script>
+    <script src="js/api.js" onload="debugLog('API 載入成功', 'success')" onerror="debugLog('API 載入失敗', 'error')"></script>
+    
+    <script>
+        debugLog('載入 Auth...', 'info');
+    </script>
+    <script src="js/auth.js" onload="debugLog('Auth 載入成功', 'success')" onerror="debugLog('Auth 載入失敗', 'error')"></script>
+
+    <script>
+        // 簡化的應用程式邏輯
+        document.addEventListener('DOMContentLoaded', async () => {
+            debugLog('DOM 載入完成', 'success');
+            
+            try {
+                // 測試各個模組是否可用
+                if (typeof Utils !== 'undefined') {
+                    debugLog('Utils 模組可用', 'success');
+                } else {
+                    debugLog('Utils 模組不可用', 'error');
+                }
+
+                if (typeof Storage !== 'undefined') {
+                    debugLog('Storage 模組可用', 'success');
+                    try {
+                        await Storage.init();
+                        debugLog('Storage 初始化成功', 'success');
+                    } catch (error) {
+                        debugLog(`Storage 初始化失敗: ${error.message}`, 'error');
+                    }
+                } else {
+                    debugLog('Storage 模組不可用', 'error');
+                }
+
+                if (typeof API !== 'undefined') {
+                    debugLog('API 模組可用', 'success');
+                    API.loadAuthToken();
+                    debugLog('API token 載入完成', 'info');
+                } else {
+                    debugLog('API 模組不可用', 'error');
+                }
+
+                if (typeof Auth !== 'undefined') {
+                    debugLog('Auth 模組可用', 'success');
+                    const isAuth = Auth.isAuthenticated();
+                    debugLog(`認證狀態: ${isAuth}`, 'info');
+                } else {
+                    debugLog('Auth 模組不可用', 'error');
+                }
+
+                // 設置登入表單
+                const loginForm = document.getElementById('login-form');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        debugLog('開始登入...', 'info');
+                        
+                        const formData = new FormData(e.target);
+                        const credentials = {
+                            username: formData.get('username'),
+                            password: formData.get('password')
+                        };
+                        
+                        try {
+                            const result = await Auth.login(credentials);
+                            debugLog('登入成功', 'success');
+                            showDashboard();
+                        } catch (error) {
+                            debugLog(`登入失敗: ${error.message}`, 'error');
+                            document.getElementById('login-error').textContent = error.message;
+                            document.getElementById('login-error').classList.remove('hidden');
+                        }
+                    });
+                }
+
+                // 登出按鈕
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', () => {
+                        Auth.logout();
+                        showLogin();
+                    });
+                }
+
+                // 檢查認證狀態並顯示適當頁面
+                if (Auth && Auth.isAuthenticated()) {
+                    try {
+                        const isValid = await Auth.validateSession();
+                        if (isValid) {
+                            showDashboard();
+                        } else {
+                            showLogin();
+                        }
+                    } catch (error) {
+                        debugLog(`Session 驗證失敗: ${error.message}`, 'error');
+                        showLogin();
+                    }
+                } else {
+                    showLogin();
+                }
+
+                // 隱藏載入畫面
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                }, 500);
+
+            } catch (error) {
+                debugLog(`初始化錯誤: ${error.message}`, 'error');
+                document.getElementById('loading-screen').innerHTML = `<p>初始化失敗: ${error.message}</p>`;
+            }
+        });
+
+        function showLogin() {
+            debugLog('顯示登入頁面', 'info');
+            document.getElementById('login-page').classList.remove('hidden');
+            document.getElementById('dashboard-page').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            debugLog('顯示儀表板', 'info');
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('dashboard-page').classList.remove('hidden');
+            
+            // 更新用戶資訊
+            const staff = Auth.getCurrentStaff();
+            if (staff) {
+                document.getElementById('staff-name').textContent = staff.full_name || '員工';
+            }
+        }
+    </script>
+</body>
+</html>

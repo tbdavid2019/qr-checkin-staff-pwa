@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>QR Check-in Staff Progressive Test</title>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/login.css">
+    
+    <style>
+        .test-controls {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 9998;
+        }
+        .test-controls button {
+            margin: 2px;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .status {
+            font-size: 11px;
+            margin: 2px 0;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 280px;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 8px;
+            font-size: 11px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 9999;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Debug Panel -->
+    <div id="debug-panel" class="debug-panel">
+        <div><strong>Progressive Loading Test</strong></div>
+        <div id="debug-log"></div>
+    </div>
+
+    <!-- Test Controls -->
+    <div class="test-controls">
+        <button onclick="loadNextModule()">載入下個模組</button>
+        <button onclick="testApp()">測試應用程式</button>
+        <button onclick="clearLog()">清除日誌</button>
+        <div id="current-status" class="status">準備開始測試</div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>Progressive Loading Test</p>
+    </div>
+
+    <!-- Login Page -->
+    <div id="login-page" class="page hidden">
+        <div class="login-container">
+            <div class="logo">
+                <h1>QR Check-in Test</h1>
+                <p>Progressive Loading</p>
+            </div>
+            
+            <form id="login-form" class="login-form">
+                <div class="input-group">
+                    <label for="username">用戶名</label>
+                    <input type="text" id="username" name="username" value="staff_1_3" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="password">密碼</label>
+                    <input type="password" id="password" name="password" value="password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="login-btn">
+                    <span class="btn-text">登入</span>
+                    <span class="btn-loading hidden">載入中...</span>
+                </button>
+            </form>
+            
+            <div id="login-error" class="error-message hidden"></div>
+        </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div id="dashboard-page" class="page hidden">
+        <header class="header">
+            <div class="header-left">
+                <h2 id="staff-name">員工姓名</h2>
+                <span id="selected-event" class="selected-event">未選擇活動</span>
+            </div>
+            <div class="header-right">
+                <button id="logout-btn" class="icon-btn">登出</button>
+            </div>
+        </header>
+        <div class="dashboard-content">
+            <div class="card">
+                <h3>Progressive Test 成功!</h3>
+                <p>所有模組載入完成</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentModuleIndex = 0;
+        let modules = [
+            { name: 'Utils', path: 'js/utils.js', required: true },
+            { name: 'Storage', path: 'js/storage.js', required: true },
+            { name: 'API', path: 'js/api.js', required: true },
+            { name: 'Auth', path: 'js/auth.js', required: true },
+            { name: 'Sync', path: 'js/sync.js', required: false },
+            { name: 'Scanner', path: 'js/scanner.js', required: false },
+            { name: 'Stats', path: 'js/stats.js', required: false },
+            { name: 'QR-Scanner-Lib', path: 'libs/qr-scanner.min.js', required: false }
+        ];
+        let loadedModules = {};
+
+        function log(message, type = 'info') {
+            console.log(`[PROGRESSIVE] ${message}`);
+            const debugLog = document.getElementById('debug-log');
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.innerHTML = `${new Date().toLocaleTimeString()}: ${message}`;
+            debugLog.appendChild(entry);
+            debugLog.scrollTop = debugLog.scrollHeight;
+            
+            document.getElementById('current-status').innerHTML = message;
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '';
+        }
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                document.head.appendChild(script);
+            });
+        }
+
+        async function loadNextModule() {
+            if (currentModuleIndex >= modules.length) {
+                log('所有模組載入完成!', 'success');
+                return;
+            }
+
+            const module = modules[currentModuleIndex];
+            log(`載入 ${module.name}...`, 'info');
+
+            try {
+                await loadScript(module.path);
+                loadedModules[module.name] = true;
+                log(`✓ ${module.name} 載入成功`, 'success');
+                
+                // Test if module is available
+                await testModuleAvailability(module.name);
+                
+            } catch (error) {
+                loadedModules[module.name] = false;
+                log(`✗ ${module.name} 載入失敗: ${error.message}`, 'error');
+                
+                if (module.required) {
+                    log(`停止載入 - ${module.name} 是必需模組`, 'error');
+                    return;
+                }
+            }
+
+            currentModuleIndex++;
+        }
+
+        async function testModuleAvailability(moduleName) {
+            try {
+                switch (moduleName) {
+                    case 'Utils':
+                        if (typeof Utils !== 'undefined') {
+                            log(`  → Utils.isOnline(): ${Utils.isOnline()}`, 'info');
+                        }
+                        break;
+                    case 'Storage':
+                        if (typeof Storage !== 'undefined') {
+                            await Storage.init();
+                            log('  → Storage 初始化成功', 'success');
+                        }
+                        break;
+                    case 'API':
+                        if (typeof API !== 'undefined') {
+                            API.loadAuthToken();
+                            log('  → API 初始化成功', 'success');
+                        }
+                        break;
+                    case 'Auth':
+                        if (typeof Auth !== 'undefined') {
+                            const isAuth = Auth.isAuthenticated();
+                            log(`  → Auth 狀態: ${isAuth}`, 'info');
+                        }
+                        break;
+                    case 'Sync':
+                        if (typeof Sync !== 'undefined') {
+                            log('  → Sync 管理器可用', 'success');
+                        }
+                        break;
+                    case 'Scanner':
+                        if (typeof QRScanner !== 'undefined') {
+                            log('  → QR 掃描器可用', 'success');
+                        }
+                        break;
+                }
+            } catch (error) {
+                log(`  → ${moduleName} 測試失敗: ${error.message}`, 'error');
+            }
+        }
+
+        async function testApp() {
+            log('開始測試完整應用程式...', 'info');
+            
+            if (!loadedModules.Utils || !loadedModules.Storage || 
+                !loadedModules.API || !loadedModules.Auth) {
+                log('缺少必需模組，無法測試應用程式', 'error');
+                return;
+            }
+
+            try {
+                // Initialize like the original app
+                if (typeof Storage !== 'undefined') {
+                    await Storage.init();
+                    log('Storage 初始化成功', 'success');
+                }
+
+                if (typeof API !== 'undefined') {
+                    API.loadAuthToken();
+                    log('API 設定完成', 'success');
+                }
+
+                // Setup login form
+                const loginForm = document.getElementById('login-form');
+                if (loginForm && typeof Auth !== 'undefined') {
+                    loginForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        log('開始登入測試...', 'info');
+                        
+                        const formData = new FormData(e.target);
+                        const credentials = {
+                            username: formData.get('username'),
+                            password: formData.get('password')
+                        };
+                        
+                        try {
+                            const result = await Auth.login(credentials);
+                            log('登入成功!', 'success');
+                            showDashboard();
+                        } catch (error) {
+                            log(`登入失敗: ${error.message}`, 'error');
+                        }
+                    });
+                }
+
+                // Show login page
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                    showLogin();
+                    log('應用程式測試準備完成', 'success');
+                }, 500);
+
+            } catch (error) {
+                log(`應用程式測試失敗: ${error.message}`, 'error');
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('login-page').classList.remove('hidden');
+            document.getElementById('dashboard-page').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('dashboard-page').classList.remove('hidden');
+            
+            if (typeof Auth !== 'undefined') {
+                const staff = Auth.getCurrentStaff();
+                if (staff) {
+                    document.getElementById('staff-name').textContent = staff.full_name || '員工';
+                }
+            }
+        }
+
+        // Global error handling
+        window.addEventListener('error', (e) => {
+            log(`JavaScript 錯誤: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            log(`Promise 錯誤: ${e.reason}`, 'error');
+        });
+
+        // Initialize
+        log('Progressive Loading Test 開始', 'info');
+        log('點擊 "載入下個模組" 開始測試', 'info');
+    </script>
+</body>
+</html>

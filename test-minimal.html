@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        #log { 
+            max-height: 200px; 
+            overflow-y: auto; 
+            border: 1px solid #ddd; 
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Check-in 最小測試</h1>
+        <p>這個頁面完全不依賴外部資源，用來診斷基礎問題。</p>
+        
+        <div class="status info" id="status">頁面載入中...</div>
+        
+        <button onclick="testCSS()">測試 CSS 載入</button>
+        <button onclick="testJS()">測試 JS 模組</button>
+        <button onclick="testAPI()">測試 API 連線</button>
+        <button onclick="clearLog()">清除日誌</button>
+        
+        <div id="log"></div>
+        
+        <div style="margin-top: 20px;">
+            <h3>登入測試</h3>
+            <input type="text" id="username" placeholder="用戶名" value="staff_1_3" style="width: 200px; padding: 5px; margin: 5px;">
+            <input type="password" id="password" placeholder="密碼" value="password" style="width: 200px; padding: 5px; margin: 5px;">
+            <button onclick="testLogin()">測試登入</button>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            console.log(`[TEST] ${message}`);
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `status ${type}`;
+            entry.innerHTML = `${new Date().toLocaleTimeString()}: ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        async function testCSS() {
+            log('開始測試 CSS 載入...', 'info');
+            
+            const cssFiles = [
+                'css/main.css',
+                'css/login.css',
+                'css/scanner.css',
+                'css/stats.css'
+            ];
+            
+            for (const cssFile of cssFiles) {
+                try {
+                    const response = await fetch(cssFile);
+                    if (response.ok) {
+                        log(`✓ ${cssFile} 載入成功`, 'success');
+                    } else {
+                        log(`✗ ${cssFile} 載入失敗: ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    log(`✗ ${cssFile} 載入錯誤: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testJS() {
+            log('開始測試 JS 模組載入...', 'info');
+            
+            const jsFiles = [
+                'js/utils.js',
+                'js/storage.js',
+                'js/api.js',
+                'js/auth.js',
+                'js/sync.js',
+                'js/scanner.js',
+                'js/stats.js'
+            ];
+            
+            for (const jsFile of jsFiles) {
+                try {
+                    const response = await fetch(jsFile);
+                    if (response.ok) {
+                        log(`✓ ${jsFile} 可訪問`, 'success');
+                    } else {
+                        log(`✗ ${jsFile} 無法訪問: ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    log(`✗ ${jsFile} 請求錯誤: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testAPI() {
+            log('開始測試 API 連線...', 'info');
+            
+            try {
+                const response = await fetch('http://office.fanpokka.ai:8000/health');
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✓ API 連線成功: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    log(`✗ API 回應錯誤: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`✗ API 連線失敗: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                log('請輸入用戶名和密碼', 'error');
+                return;
+            }
+            
+            log('開始測試登入...', 'info');
+            
+            try {
+                const response = await fetch('http://office.fanpokka.ai:8000/api/v1/staff/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.access_token) {
+                    log(`✓ 登入成功! 歡迎 ${data.full_name}`, 'success');
+                } else {
+                    log(`✗ 登入失敗: ${data.message || '未知錯誤'}`, 'error');
+                }
+            } catch (error) {
+                log(`✗ 登入請求失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // 頁面載入完成
+        document.addEventListener('DOMContentLoaded', () => {
+            log('頁面 DOM 載入完成', 'success');
+            updateStatus('頁面載入完成，可以開始測試', 'success');
+        });
+
+        // 全域錯誤捕獲
+        window.addEventListener('error', (e) => {
+            log(`JavaScript 錯誤: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            log(`Promise 錯誤: ${e.reason}`, 'error');
+        });
+
+        // 立即執行測試
+        log('最小測試頁面開始載入', 'info');
+        updateStatus('正在初始化測試環境...', 'info');
+    </script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Check-in Staff Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin: 5px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>QR Check-in Staff 測試</h2>
+        
+        <div id="status-log"></div>
+        
+        <div>
+            <h3>登入測試</h3>
+            <input type="text" id="username" placeholder="用戶名" value="staff_1_3">
+            <input type="password" id="password" placeholder="密碼" value="password">
+            <button onclick="testLogin()">測試登入</button>
+        </div>
+        
+        <div>
+            <h3>系統測試</h3>
+            <button onclick="testAPI()">測試 API 連線</button>
+            <button onclick="testStorage()">測試本地儲存</button>
+            <button onclick="clearLog()">清除記錄</button>
+        </div>
+    </div>
+
+    <script>
+        let logContainer = document.getElementById('status-log');
+        
+        function log(message, type = 'info') {
+            console.log(message);
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `${new Date().toLocaleTimeString()}: ${message}`;
+            logContainer.appendChild(div);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function clearLog() {
+            logContainer.innerHTML = '';
+        }
+        
+        async function testAPI() {
+            log('測試 API 連線...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                if (response.ok) {
+                    log('✓ API 連線成功', 'success');
+                } else {
+                    log(`✗ API 回應錯誤: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`✗ API 連線失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                log('請輸入用戶名和密碼', 'error');
+                return;
+            }
+            
+            log('嘗試登入...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/staff/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.access_token) {
+                    log('✓ 登入成功!', 'success');
+                    log(`歡迎 ${data.full_name}`, 'success');
+                } else {
+                    log(`✗ 登入失敗: ${data.message || '未知錯誤'}`, 'error');
+                }
+            } catch (error) {
+                log(`✗ 登入請求失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        function testStorage() {
+            log('測試本地儲存...', 'info');
+            
+            try {
+                // Test localStorage
+                localStorage.setItem('test', 'hello');
+                const value = localStorage.getItem('test');
+                localStorage.removeItem('test');
+                
+                if (value === 'hello') {
+                    log('✓ localStorage 正常', 'success');
+                } else {
+                    log('✗ localStorage 異常', 'error');
+                }
+                
+                // Test IndexedDB
+                if ('indexedDB' in window) {
+                    log('✓ IndexedDB 支援', 'success');
+                } else {
+                    log('✗ IndexedDB 不支援', 'error');
+                }
+                
+            } catch (error) {
+                log(`✗ 儲存測試失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 初始化
+        log('測試頁面載入完成', 'success');
+        log('請測試各項功能', 'info');
+    </script>
+</body>
+</html>
