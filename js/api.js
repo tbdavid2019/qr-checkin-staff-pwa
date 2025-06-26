@@ -6,7 +6,7 @@
 class ApiManager {
     constructor() {
         // Configuration - should be set from environment or config
-        this.baseURL = 'http://localhost:8000'; // 直接連接到後端 API
+        this.baseURL = 'https://url2ticket2.ai360.workers.dev'; // 連接到 Cloudflare Workers API
         this.timeout = 30000; // 30 seconds
         this.retryAttempts = 3;
         this.retryDelay = 1000; // 1 second

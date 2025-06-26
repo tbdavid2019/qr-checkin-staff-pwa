@@ -3,13 +3,13 @@
   "short_name": "QR Staff",
   "description": "QR Check-in System 員工掃碼簽到應用",
   "version": "1.0.0",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#667eea",
   "background_color": "#ffffff",
   "lang": "zh-TW",
-  "scope": "/",
+  "scope": "./",
   "icons": [
     {
       "src": "icons/icon-72x72.png",
