@@ -418,10 +418,13 @@
         }
 
         // 動態載入 JavaScript
-        function loadScript(src) {
+        function loadScript(src, isModule = false) {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
                 script.src = src;
+                if (isModule) {
+                    script.type = 'module';
+                }
                 script.onload = () => resolve();
                 script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
                 document.body.appendChild(script);
@@ -429,10 +432,10 @@
         }
 
         // 安全的模組載入
-        async function loadModule(name, src, required = true) {
+        async function loadModule(name, src, required = true, isModule = false) {
             try {
                 updateLoadingStatus(`載入 ${name}...`);
-                await loadScript(src);
+                await loadScript(src, isModule);
                 loadedModules[name] = true;
                 updateLoadingStatus(`✓ ${name} 載入成功`);
                 return true;
@@ -474,7 +477,7 @@
                 await loadModule('API', 'js/api.js', true);
                 await loadModule('Auth', 'js/auth.js', true);
 
-                // 3. 載入 QR Scanner 庫 (必須在 Scanner 模組之前)
+                // 3. 載入 QR Scanner 庫 (使用修正過的版本)
                 await loadModule('QRScanner-Lib', 'libs/qr-scanner.min.js', true);
                 
                 // 4. 載入可選模組
@@ -1001,80 +1004,46 @@
                 
                 try {
                     // 如果有 QR Scanner 庫，嘗試使用它
-                    // 檢查 QR Scanner 庫是否載入
-                    console.log('Checking QR Scanner availability...');
-                    console.log('typeof QrScanner:', typeof QrScanner);
-                    console.log('typeof QRScanner:', typeof QRScanner);
-                    console.log('window.QrScanner:', window.QrScanner);
-                    console.log('window.QRScanner:', window.QRScanner);
-                    
-                    if (typeof QrScanner !== 'undefined' || typeof QRScanner !== 'undefined') {
-                        console.log('Attempting to use QRScanner library');
-                        
-                        // 決定使用哪個 Scanner
-                        const Scanner = typeof QRScanner !== 'undefined' ? QRScanner : QrScanner;
-                        console.log('Using Scanner:', Scanner);
-                        
-                        // 如果是我們自己的 QRScanner 類別
-                        if (typeof QRScanner !== 'undefined' && QRScanner.setCallbacks) {
-                            console.log('Using custom QRScanner with callbacks');
-                            QRScanner.setCallbacks({
-                                onScan: (qrData) => {
-                                    console.log('QR Scanner: onScan callback triggered with data:', qrData);
-                                    handleQRScanResult(qrData);
-                                },
-                                onError: (error) => {
-                                    console.error('QR Scanner error:', error);
-                                    showScannerError(error.message);
-                                }
-                            });
-                            
-                            const initSuccess = await QRScanner.init();
-                            if (initSuccess) {
-                                await QRScanner.startScanning();
-                                cameraInitialized = true;
-                                if (scannerStatus) {
-                                    scannerStatus.textContent = '對準 QR Code 進行掃描';
-                                }
-                            }
-                        }
-                        // 如果是第三方 QrScanner 庫
-                        else if (typeof QrScanner !== 'undefined') {
-                            console.log('Using third-party QrScanner library');
-                            const video = document.getElementById('scanner-video');
-                            if (video) {
+                    // 使用第三方 QrScanner 庫
+                    if (typeof QrScanner !== 'undefined') {
+                        console.log('Using QrScanner library');
+                        const video = document.getElementById('scanner-video');
+                        if (video) {
+                            try {
                                 const qrScanner = new QrScanner(
                                     video,
                                     result => {
-                                        console.log('QrScanner result:', result);
-                                        handleQRScanResult({
+                                        console.log('QR Code detected:', result);
+                                        const qrData = {
                                             type: 'qr',
                                             data: result.data || result,
                                             raw: result
-                                        });
+                                        };
+                                        handleQRScanResult(qrData);
                                     },
                                     {
                                         preferredCamera: 'environment',
                                         highlightScanRegion: true,
-                                        highlightCodeOutline: true
+                                        highlightCodeOutline: true,
+                                        maxScansPerSecond: 5
                                     }
                                 );
                                 
                                 await qrScanner.start();
                                 cameraInitialized = true;
+                                window.currentQrScanner = qrScanner;
+                                
                                 if (scannerStatus) {
                                     scannerStatus.textContent = '對準 QR Code 進行掃描';
                                 }
-                                
-                                // 儲存 scanner 實例以便後續控制
-                                window.currentQrScanner = qrScanner;
+                                console.log('QrScanner started successfully');
+                            } catch (qrError) {
+                                console.error('QrScanner initialization failed:', qrError);
+                                throw qrError;
                             }
                         }
-                    }
-                    
-                    // 如果 QR Scanner 庫不可用，嘗試基礎相機
-                    if (!cameraInitialized) {
-                        console.log('QR Scanner library not available, trying basic camera');
+                    } else {
+                        console.log('QrScanner library not available, using basic camera');
                         await initBasicCamera();
                         cameraInitialized = true;
                     }
@@ -1278,42 +1247,41 @@
         
         // 處理 QR 掃描結果
         async function handleQRScanResult(qrData) {
-            console.log('handleQRScanResult called with:', qrData);
+            console.log('QR Code scanned:', qrData);
             
             const scannerResult = document.getElementById('scanner-result');
             const scannerStatus = document.getElementById('scanner-status');
             
-            console.log('Scanner result element:', scannerResult);
-            console.log('Scanner status element:', scannerStatus);
-            
             try {
-                if (scannerStatus) {
-                    scannerStatus.textContent = '正在處理 QR Code...';
-                    console.log('Updated scanner status to: 正在處理 QR Code...');
+                // 暫停掃描以避免重複掃描
+                if (window.currentQrScanner) {
+                    window.currentQrScanner.pause();
                 }
                 
-                console.log('Processing QR data:', qrData);
-                console.log('QR data type:', typeof qrData);
-                console.log('QR data keys:', Object.keys(qrData || {}));
+                if (scannerStatus) {
+                    scannerStatus.textContent = '正在處理 QR Code...';
+                }
                 
-                // 解析 QR 數據
-                let ticketInfo = null;
+                // 提取 QR Code 數據
+                const qrCodeData = qrData.data || qrData;
+                console.log('QR Code data:', qrCodeData);
+                
+                // 嘗試獲取票券資訊
+                let ticketInfo = { raw_data: qrCodeData };
+                
                 if (typeof API !== 'undefined') {
-                    // 嘗試獲取票券資訊
                     try {
-                        if (qrData.uuid) {
-                            ticketInfo = await API.getPublicTicket(qrData.uuid);
-                        } else if (qrData.token) {
-                            // 如果是 token，直接使用
-                            ticketInfo = { qr_token: qrData.token };
+                        // 嘗試作為 UUID 或 token 處理
+                        if (qrCodeData.length === 36 && qrCodeData.includes('-')) {
+                            // 看起來像 UUID
+                            ticketInfo = await API.getPublicTicket(qrCodeData);
                         } else {
-                            // 嘗試作為 UUID 處理
-                            ticketInfo = await API.getPublicTicket(qrData.data);
+                            // 可能是 token 或其他格式
+                            ticketInfo = { qr_token: qrCodeData, raw_data: qrCodeData };
                         }
                     } catch (error) {
-                        console.warn('Failed to get ticket info:', error);
-                        // 繼續處理，可能是直接的 token
-                        ticketInfo = { raw_data: qrData.data };
+                        console.warn('API call failed:', error);
+                        ticketInfo = { raw_data: qrCodeData, error: error.message };
                     }
                 }
                 
@@ -1322,20 +1290,12 @@
                     scannerResult.classList.remove('hidden');
                     
                     // 更新票券資訊顯示
-                    const holderName = document.getElementById('holder-name');
-                    const eventName = document.getElementById('event-name');
-                    const ticketStatus = document.getElementById('ticket-status');
-                    const ticketDescription = document.getElementById('ticket-description');
+                    document.getElementById('holder-name').textContent = ticketInfo.holder_name || '待確認';
+                    document.getElementById('event-name').textContent = window.selectedEvent?.event_name || '當前活動';
+                    document.getElementById('ticket-status').textContent = ticketInfo.is_used ? '已使用' : '有效';
+                    document.getElementById('ticket-description').textContent = ticketInfo.description || qrCodeData;
                     
-                    if (holderName) holderName.textContent = ticketInfo?.holder_name || '未知';
-                    if (eventName) eventName.textContent = window.selectedEvent?.event_name || '未知';
-                    if (ticketStatus) {
-                        ticketStatus.textContent = ticketInfo?.status || '待確認';
-                        ticketStatus.className = `status-badge ${ticketInfo?.status || 'pending'}`;
-                    }
-                    if (ticketDescription) ticketDescription.textContent = ticketInfo?.description || qrData.data;
-                    
-                    // 儲存掃描結果供簽到使用
+                    // 儲存掃描結果
                     window.currentScanResult = {
                         qrData: qrData,
                         ticketInfo: ticketInfo
@@ -1353,7 +1313,16 @@
                 
             } catch (error) {
                 console.error('Error processing QR scan result:', error);
-                showScannerError('處理 QR Code 時發生錯誤: ' + error.message);
+                if (scannerStatus) {
+                    scannerStatus.textContent = '處理錯誤: ' + error.message;
+                }
+                
+                // 重新啟動掃描
+                setTimeout(() => {
+                    if (window.currentQrScanner) {
+                        window.currentQrScanner.start();
+                    }
+                }, 2000);
             }
         }
         
@@ -1409,7 +1378,7 @@
                 };
             }
             
-            // 確認簽到按鈕
+            // 確認核銷按鈕
             const confirmBtn = document.getElementById('confirm-checkin');
             if (confirmBtn) {
                 confirmBtn.onclick = async () => {
@@ -1423,11 +1392,19 @@
                 cancelBtn.onclick = () => {
                     hideElement(document.getElementById('scanner-result'));
                     document.getElementById('scanner-status').textContent = '對準 QR Code 進行掃描';
+                    
+                    // 重新啟動掃描
+                    if (window.currentQrScanner) {
+                        window.currentQrScanner.start();
+                    }
+                    
+                    // 清除掃描結果
+                    window.currentScanResult = null;
                 };
             }
         }
 
-        // 處理簽到
+        // 處理核銷
         async function handleCheckin() {
             const confirmBtn = document.getElementById('confirm-checkin');
             const scannerStatus = document.getElementById('scanner-status');
@@ -1448,17 +1425,17 @@
                 }
                 
                 if (scannerStatus) {
-                    scannerStatus.textContent = '正在處理簽到...';
+                    scannerStatus.textContent = '正在處理核銷...';
                 }
                 
                 const { qrData, ticketInfo } = window.currentScanResult;
                 
-                // 準備簽到數據
+                // 準備核銷數據
                 let checkinData = {
                     event_id: window.selectedEvent.event_id
                 };
                 
-                // 根據 QR 數據類型設置簽到參數
+                // 根據 QR 數據類型設置核銷參數
                 if (qrData.token) {
                     checkinData.qr_token = qrData.token;
                 } else if (qrData.uuid) {
@@ -1472,11 +1449,11 @@
                 
                 console.log('Checkin data:', checkinData);
                 
-                // 調用簽到 API
+                // 調用核銷 API
                 const result = await API.checkinTicket(checkinData.qr_token, checkinData.event_id);
                 
                 if (result && result.success) {
-                    showToast('簽到成功！', 'success');
+                    showToast('核銷成功！', 'success');
                     
                     // 更新統計顯示
                     updateDashboardStats();
