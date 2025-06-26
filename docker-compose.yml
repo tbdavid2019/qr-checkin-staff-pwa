@@ -1,0 +1,22 @@
+# Docker Compose for QR Check-in Staff PWA
+version: '3.8'
+
+services:
+  qr-checkin-staff:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      - API_BASE_URL=http://localhost:8000
+    volumes:
+      # 可選：掛載日誌目錄到主機
+      - ./logs:/var/log/nginx
+    restart: unless-stopped
+    # 使用 host 網絡模式，讓容器直接存取主機網絡
+    network_mode: "host"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

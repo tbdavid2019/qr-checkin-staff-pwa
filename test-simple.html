@@ -90,7 +90,7 @@
             log('測試 API 連線...', 'info');
             
             try {
-                const response = await fetch('http://localhost:8000/health');
+                const response = await fetch('/api/health');
                 if (response.ok) {
                     log('✓ API 連線成功', 'success');
                 } else {
@@ -113,7 +113,7 @@
             log('嘗試登入...', 'info');
             
             try {
-                const response = await fetch('http://localhost:8000/api/v1/staff/login', {
+                const response = await fetch('/api/v1/staff/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

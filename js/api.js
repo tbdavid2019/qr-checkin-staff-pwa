@@ -6,7 +6,7 @@
 class ApiManager {
     constructor() {
         // Configuration - should be set from environment or config
-        this.baseURL = 'http://office.fanpokka.ai:8000';
+        this.baseURL = 'http://localhost:8000'; // 直接連接到後端 API
         this.timeout = 30000; // 30 seconds
         this.retryAttempts = 3;
         this.retryDelay = 1000; // 1 second

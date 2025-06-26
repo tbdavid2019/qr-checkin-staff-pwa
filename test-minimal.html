@@ -144,7 +144,7 @@
             log('開始測試 API 連線...', 'info');
             
             try {
-                const response = await fetch('http://office.fanpokka.ai:8000/health');
+                const response = await fetch('/api/health');
                 if (response.ok) {
                     const data = await response.json();
                     log(`✓ API 連線成功: ${JSON.stringify(data)}`, 'success');
@@ -168,7 +168,7 @@
             log('開始測試登入...', 'info');
             
             try {
-                const response = await fetch('http://office.fanpokka.ai:8000/api/v1/staff/login', {
+                const response = await fetch('/api/v1/staff/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
