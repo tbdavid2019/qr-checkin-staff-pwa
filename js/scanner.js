@@ -136,29 +136,38 @@ class QRScannerManager {
             
             // Implement scan cooldown to prevent rapid successive scans
             if (now - this.lastScanTime < this.scanCooldown) {
+                console.log('QR Scanner: Scan cooldown active, ignoring result');
                 return;
             }
             
             this.lastScanTime = now;
             
-            console.log('QR Scanner: Scan result:', result);
+            console.log('QR Scanner: Scan result received:', result);
+            console.log('QR Scanner: Raw data:', result.data || result);
             
             // Parse QR code data
             const qrData = this.parseQRData(result.data || result);
+            console.log('QR Scanner: Parsed QR data:', qrData);
             
             if (qrData) {
                 this.updateScannerStatus('掃描成功！');
                 
                 // Vibrate if supported
-                Utils.vibrate([100, 50, 100]);
+                if (typeof Utils !== 'undefined' && Utils.vibrate) {
+                    Utils.vibrate([100, 50, 100]);
+                }
                 
                 // Show success feedback
                 this.showScanSuccess();
                 
+                console.log('QR Scanner: Calling onScan callback with data:', qrData);
                 if (this.callbacks.onScan) {
                     this.callbacks.onScan(qrData);
+                } else {
+                    console.warn('QR Scanner: No onScan callback registered!');
                 }
             } else {
+                console.warn('QR Scanner: Failed to parse QR data');
                 this.updateScannerStatus('無效的 QR Code');
                 this.handleError(new Error('無效的 QR Code 格式'));
             }
@@ -174,27 +183,36 @@ class QRScannerManager {
      */
     parseQRData(data) {
         try {
+            console.log('QR Scanner: Parsing QR data:', data);
+            console.log('QR Scanner: Data type:', typeof data);
+            console.log('QR Scanner: Data length:', data?.length);
+            
             // Try to parse as JSON first (for structured data)
             try {
                 const parsed = JSON.parse(data);
+                console.log('QR Scanner: Successfully parsed as JSON:', parsed);
                 if (parsed.ticket_uuid || parsed.uuid) {
-                    return {
+                    const result = {
                         type: 'json',
                         uuid: parsed.ticket_uuid || parsed.uuid,
                         data: parsed
                     };
+                    console.log('QR Scanner: Returning JSON result:', result);
+                    return result;
                 }
             } catch (e) {
-                // Not JSON, continue with other parsing methods
+                console.log('QR Scanner: Not valid JSON, trying other formats');
             }
 
             // Check if it's a UUID format
-            if (Utils.isValidUUID(data)) {
-                return {
+            if (typeof Utils !== 'undefined' && Utils.isValidUUID && Utils.isValidUUID(data)) {
+                const result = {
                     type: 'uuid',
                     uuid: data,
                     data: data
                 };
+                console.log('QR Scanner: Returning UUID result:', result);
+                return result;
             }
 
             // Check if it's a URL with UUID
@@ -203,32 +221,38 @@ class QRScannerManager {
                 const pathSegments = url.pathname.split('/');
                 const uuid = pathSegments[pathSegments.length - 1];
                 
-                if (Utils.isValidUUID(uuid)) {
-                    return {
+                if (typeof Utils !== 'undefined' && Utils.isValidUUID && Utils.isValidUUID(uuid)) {
+                    const result = {
                         type: 'url',
                         uuid: uuid,
                         url: data,
                         data: data
                     };
+                    console.log('QR Scanner: Returning URL result:', result);
+                    return result;
                 }
             } catch (e) {
-                // Not a valid URL
+                console.log('QR Scanner: Not a valid URL');
             }
 
             // Check if it's a QR token (JWT-like format)
             if (data.includes('.') && data.length > 50) {
-                return {
+                const result = {
                     type: 'token',
                     token: data,
                     data: data
                 };
+                console.log('QR Scanner: Returning token result:', result);
+                return result;
             }
 
             // Default: treat as raw data
-            return {
+            const result = {
                 type: 'raw',
                 data: data
             };
+            console.log('QR Scanner: Returning raw result:', result);
+            return result;
 
         } catch (error) {
             console.error('QR Scanner: Failed to parse QR data:', error);

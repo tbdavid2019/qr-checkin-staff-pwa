@@ -4,13 +4,13 @@
 
 ### 1. 準備工作
 - 確保您有 Hugging Face 帳號
-- 確保後端 API (office.fanpokka.ai:8000) 已設定 CORS 允許來自 Hugging Face Space 的請求
+- 確保後端 API 正常運作
 
 ### 2. 創建 Space
 1. 前往 [Hugging Face Spaces](https://huggingface.co/spaces)
 2. 點擊 "Create new Space"
 3. 填寫以下資訊：
-   - **Space name**: `qr-checkin-staff-pwa`
+   - **Space name**: `ticket-verification-system`
    - **License**: MIT
    - **SDK**: Static
    - **Visibility**: Public 或 Private (依需求)
@@ -74,5 +74,5 @@
 
 如果遇到部署問題，請檢查：
 1. 後端 API 是否正常運作
-2. CORS 設定是否正確
-3. 瀏覽器控制台是否有錯誤訊息
+2. 瀏覽器控制台是否有錯誤訊息
+3. 網路連線是否正常

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>QR Check-in Staff</title>
+    <title>活動票券核銷系統</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="description" content="QR Check-in System 員工掃碼簽到應用">
+    <meta name="description" content="活動票券 QR Code 核銷系統">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="QR Staff">
+    <meta name="apple-mobile-web-app-title" content="票券核銷">
     
     <!-- PWA Links -->
     <link rel="manifest" href="manifest.json">
@@ -64,54 +64,6 @@
             color: #ef4444;
         }
         
-        /* Android 手動輸入優化 */
-        .manual-qr-input {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            z-index: 10;
-        }
-        
-        .manual-input-container h4 {
-            margin: 0 0 15px 0;
-            text-align: center;
-            color: #333;
-        }
-        
-        .manual-input-container input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-            margin-bottom: 15px;
-            box-sizing: border-box;
-        }
-        
-        .manual-input-container input:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-        
-        .manual-input-container button {
-            width: 100%;
-            padding: 12px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        
-        .manual-input-container button:hover {
-            background: #5a67d8;
-        }
         
         .scanner-error .error-container {
             background: white;
@@ -225,8 +177,8 @@
     <div id="login-page" class="page hidden">
         <div class="login-container">
             <div class="logo">
-                <h1>QR Check-in</h1>
-                <p>員工簽到系統</p>
+                <h1>票券核銷系統</h1>
+                <p>活動入場驗證</p>
             </div>
             
             <form id="login-form" class="login-form">
@@ -266,7 +218,7 @@
     <div id="dashboard-page" class="page hidden">
         <header class="header">
             <div class="header-left">
-                <h2 id="staff-name">員工姓名</h2>
+                <h2 id="staff-name">核銷人員</h2>
                 <span id="selected-event" class="selected-event">未選擇活動</span>
             </div>
             <div class="header-right">
@@ -291,12 +243,12 @@
             <section class="quick-actions">
                 <button id="scan-btn" class="action-btn scan-btn" disabled>
                     <div class="action-icon">📷</div>
-                    <span>開始掃碼</span>
+                    <span>開始核銷</span>
                 </button>
                 
                 <button id="stats-btn" class="action-btn stats-btn" disabled>
                     <div class="action-icon">📊</div>
-                    <span>查看統計</span>
+                    <span>核銷統計</span>
                 </button>
             </section>
 
@@ -308,7 +260,7 @@
                 </div>
                 <div class="status-card">
                     <div class="status-number" id="checked-in">0</div>
-                    <div class="status-label">已簽到</div>
+                    <div class="status-label">已核銷</div>
                 </div>
                 <div class="status-card">
                     <div class="status-number" id="pending-sync">0</div>
@@ -357,7 +309,7 @@
                 
                 <div class="scanner-actions">
                     <button id="confirm-checkin" class="btn btn-success">
-                        <span class="btn-text">確認簽到</span>
+                        <span class="btn-text">確認核銷</span>
                         <span class="btn-loading hidden">
                             <div class="mini-spinner"></div>
                             處理中...
@@ -382,7 +334,7 @@
     <div id="stats-page" class="page hidden">
         <header class="stats-header">
             <button id="back-from-stats" class="back-btn">← 返回</button>
-            <h2>簽到統計</h2>
+            <h2>核銷統計</h2>
             <button id="refresh-stats" class="icon-btn">
                 <span class="refresh-icon">🔄</span>
             </button>
@@ -397,18 +349,18 @@
                 </div>
                 <div class="summary-card">
                     <div class="summary-number" id="stats-checked">0</div>
-                    <div class="summary-label">已簽到</div>
+                    <div class="summary-label">已核銷</div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-number" id="stats-pending">0</div>
-                    <div class="summary-label">未簽到</div>
+                    <div class="summary-label">未核銷</div>
                 </div>
             </section>
 
             <!-- Tabs -->
             <div class="stats-tabs">
-                <button class="tab-btn active" data-tab="checked">已簽到</button>
-                <button class="tab-btn" data-tab="pending">未簽到</button>
+                <button class="tab-btn active" data-tab="checked">已核銷</button>
+                <button class="tab-btn" data-tab="pending">未核銷</button>
                 <button class="tab-btn" data-tab="offline">離線記錄</button>
             </div>
 
@@ -522,13 +474,13 @@
                 await loadModule('API', 'js/api.js', true);
                 await loadModule('Auth', 'js/auth.js', true);
 
-                // 3. 載入可選模組
-                await loadModule('Sync', 'js/sync.js', false);
-                await loadModule('Scanner', 'js/scanner.js', false);
-                await loadModule('Stats', 'js/stats.js', false);
+                // 3. 載入 QR Scanner 庫 (必須在 Scanner 模組之前)
+                await loadModule('QRScanner-Lib', 'libs/qr-scanner.min.js', true);
                 
-                // 4. 載入 QR Scanner 庫
-                await loadModule('QRScanner-Lib', 'libs/qr-scanner.min.js', false);
+                // 4. 載入可選模組
+                await loadModule('Sync', 'js/sync.js', false);
+                await loadModule('Scanner', 'js/scanner.js', true);
+                await loadModule('Stats', 'js/stats.js', false);
 
                 // 4. 初始化核心功能
                 updateLoadingStatus('初始化存儲...');
@@ -1027,21 +979,21 @@
                 
                 // Android Chrome 特殊檢查
                 if (isAndroid && isChrome && !isHttps && !isLocalhost) {
-                    throw new Error('Android Chrome 需要 HTTPS 才能使用相機功能。請使用 HTTPS 連線或改用手動輸入模式。');
+                    throw new Error('Android Chrome 需要 HTTPS 才能使用相機功能。請使用 HTTPS 連線。');
                 }
                 
                 // 檢查 MediaDevices API
                 if (!navigator.mediaDevices) {
-                    throw new Error('此瀏覽器不支援 MediaDevices API，請使用手動輸入模式');
+                    throw new Error('此瀏覽器不支援 MediaDevices API');
                 }
                 
                 if (!navigator.mediaDevices.getUserMedia) {
-                    throw new Error('此瀏覽器不支援相機存取，請使用手動輸入模式');
+                    throw new Error('此瀏覽器不支援相機存取');
                 }
                 
                 // 檢查是否在安全內容中執行
                 if (!window.isSecureContext && !isLocalhost) {
-                    throw new Error('相機功能需要安全連線（HTTPS），請使用手動輸入模式');
+                    throw new Error('相機功能需要安全連線（HTTPS）');
                 }
                 
                 // 嘗試初始化相機掃描
@@ -1049,28 +1001,73 @@
                 
                 try {
                     // 如果有 QR Scanner 庫，嘗試使用它
-                    if (typeof QrScanner !== 'undefined' && typeof QRScanner !== 'undefined') {
+                    // 檢查 QR Scanner 庫是否載入
+                    console.log('Checking QR Scanner availability...');
+                    console.log('typeof QrScanner:', typeof QrScanner);
+                    console.log('typeof QRScanner:', typeof QRScanner);
+                    console.log('window.QrScanner:', window.QrScanner);
+                    console.log('window.QRScanner:', window.QRScanner);
+                    
+                    if (typeof QrScanner !== 'undefined' || typeof QRScanner !== 'undefined') {
                         console.log('Attempting to use QRScanner library');
                         
-                        // 設置掃描結果處理
-                        QRScanner.setCallbacks({
-                            onScan: (qrData) => {
-                                console.log('QR Scanned:', qrData);
-                                handleQRScanResult(qrData);
-                            },
-                            onError: (error) => {
-                                console.error('QR Scanner error:', error);
-                                throw error;
-                            }
-                        });
+                        // 決定使用哪個 Scanner
+                        const Scanner = typeof QRScanner !== 'undefined' ? QRScanner : QrScanner;
+                        console.log('Using Scanner:', Scanner);
                         
-                        // 初始化 QR Scanner
-                        const initSuccess = await QRScanner.init();
-                        if (initSuccess) {
-                            await QRScanner.startScanning();
-                            cameraInitialized = true;
-                            if (scannerStatus) {
-                                scannerStatus.textContent = '對準 QR Code 進行掃描';
+                        // 如果是我們自己的 QRScanner 類別
+                        if (typeof QRScanner !== 'undefined' && QRScanner.setCallbacks) {
+                            console.log('Using custom QRScanner with callbacks');
+                            QRScanner.setCallbacks({
+                                onScan: (qrData) => {
+                                    console.log('QR Scanner: onScan callback triggered with data:', qrData);
+                                    handleQRScanResult(qrData);
+                                },
+                                onError: (error) => {
+                                    console.error('QR Scanner error:', error);
+                                    showScannerError(error.message);
+                                }
+                            });
+                            
+                            const initSuccess = await QRScanner.init();
+                            if (initSuccess) {
+                                await QRScanner.startScanning();
+                                cameraInitialized = true;
+                                if (scannerStatus) {
+                                    scannerStatus.textContent = '對準 QR Code 進行掃描';
+                                }
+                            }
+                        }
+                        // 如果是第三方 QrScanner 庫
+                        else if (typeof QrScanner !== 'undefined') {
+                            console.log('Using third-party QrScanner library');
+                            const video = document.getElementById('scanner-video');
+                            if (video) {
+                                const qrScanner = new QrScanner(
+                                    video,
+                                    result => {
+                                        console.log('QrScanner result:', result);
+                                        handleQRScanResult({
+                                            type: 'qr',
+                                            data: result.data || result,
+                                            raw: result
+                                        });
+                                    },
+                                    {
+                                        preferredCamera: 'environment',
+                                        highlightScanRegion: true,
+                                        highlightCodeOutline: true
+                                    }
+                                );
+                                
+                                await qrScanner.start();
+                                cameraInitialized = true;
+                                if (scannerStatus) {
+                                    scannerStatus.textContent = '對準 QR Code 進行掃描';
+                                }
+                                
+                                // 儲存 scanner 實例以便後續控制
+                                window.currentQrScanner = qrScanner;
                             }
                         }
                     }
@@ -1087,13 +1084,14 @@
                     cameraInitialized = false;
                 }
                 
-                // 如果相機初始化失敗，直接使用手動輸入
+                // 如果相機初始化失敗，顯示錯誤
                 if (!cameraInitialized) {
-                    console.log('Camera not available, showing manual input');
+                    console.log('Camera not available');
                     if (scannerStatus) {
-                        scannerStatus.textContent = '相機不可用，請使用手動輸入';
+                        scannerStatus.textContent = '相機不可用，請檢查設備或權限';
                     }
-                    showManualQRInput();
+                    // 相機不可用時的處理
+                    console.log('Camera initialization failed completely');
                 }
                 
                 // 設置掃描器控制按鈕
@@ -1154,12 +1152,12 @@
                         console.log('Video playback started');
                         
                         if (scannerStatus) {
-                            scannerStatus.textContent = '相機已啟動！對準 QR Code 掃描（或使用下方手動輸入）';
+                            scannerStatus.textContent = '相機已啟動！對準 QR Code 掃描';
                         }
                     } catch (playError) {
                         console.warn('Video play failed, need user interaction:', playError);
                         if (scannerStatus) {
-                            scannerStatus.textContent = '相機已連接，請點擊螢幕啟動（或使用下方手動輸入）';
+                            scannerStatus.textContent = '相機已連接，請點擊螢幕啟動';
                         }
                         
                         // 添加點擊啟動功能
@@ -1175,8 +1173,6 @@
                     }
                 }
                 
-                // 同時顯示手動輸入選項作為備用
-                showManualQRInput();
                 
             } catch (error) {
                 console.error('Camera access error:', error);
@@ -1258,13 +1254,10 @@
                                 重新整理頁面
                             </button>
                         </div>
-                        <p class="manual-fallback">或使用下方手動輸入：</p>
                     </div>
                 `;
                 scannerViewport.appendChild(guideDiv);
                 
-                // 仍然提供手動輸入選項
-                showManualQRInput();
             }
         }
         
@@ -1278,61 +1271,30 @@
                 location.reload(); // 重新載入頁面以重新初始化
                 
             } catch (error) {
-                showError('權限請求失敗，請手動在瀏覽器設定中允許相機權限');
+                showError('權限請求失敗，請在瀏覽器設定中允許相機權限');
             }
         }
         
-        // 顯示手動 QR 輸入
-        function showManualQRInput() {
-            const scannerViewport = document.getElementById('scanner-viewport');
-            if (scannerViewport) {
-                const manualInput = document.createElement('div');
-                manualInput.className = 'manual-qr-input';
-                manualInput.innerHTML = `
-                    <div class="manual-input-container">
-                        <h4>手動輸入 QR Code</h4>
-                        <input type="text" id="manual-qr-code" placeholder="貼上或輸入 QR Code 內容" />
-                        <button id="manual-qr-submit" class="btn btn-primary">確認</button>
-                    </div>
-                `;
-                scannerViewport.appendChild(manualInput);
-                
-                // 設置手動輸入事件
-                const input = document.getElementById('manual-qr-code');
-                const submit = document.getElementById('manual-qr-submit');
-                
-                if (submit) {
-                    submit.onclick = () => {
-                        const qrCode = input.value.trim();
-                        if (qrCode) {
-                            handleQRScanResult({ type: 'manual', data: qrCode });
-                        } else {
-                            showError('請輸入 QR Code 內容');
-                        }
-                    };
-                }
-                
-                if (input) {
-                    input.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') {
-                            submit.click();
-                        }
-                    });
-                }
-            }
-        }
         
         // 處理 QR 掃描結果
         async function handleQRScanResult(qrData) {
+            console.log('handleQRScanResult called with:', qrData);
+            
             const scannerResult = document.getElementById('scanner-result');
             const scannerStatus = document.getElementById('scanner-status');
+            
+            console.log('Scanner result element:', scannerResult);
+            console.log('Scanner status element:', scannerStatus);
             
             try {
                 if (scannerStatus) {
                     scannerStatus.textContent = '正在處理 QR Code...';
+                    console.log('Updated scanner status to: 正在處理 QR Code...');
                 }
                 
                 console.log('Processing QR data:', qrData);
+                console.log('QR data type:', typeof qrData);
+                console.log('QR data keys:', Object.keys(qrData || {}));
                 
                 // 解析 QR 數據
                 let ticketInfo = null;
@@ -1412,7 +1374,7 @@
                         <h4>掃描器錯誤</h4>
                         <p>${message}</p>
                         <button class="btn btn-secondary" onclick="location.reload()">重新載入</button>
-                        <button class="btn btn-primary" onclick="showManualQRInput()">手動輸入</button>
+                        <button class="btn btn-primary" onclick="location.reload()">重新嘗試</button>
                     </div>
                 `;
                 scannerViewport.appendChild(errorDiv);
@@ -1541,7 +1503,7 @@
                         scannerStatus.textContent = '對準 QR Code 進行掃描';
                     }
                 } else {
-                    // 重新顯示手動輸入
+                    // 重新啟動掃描
                     setTimeout(() => {
                         showManualQRInput();
                         if (scannerStatus) {

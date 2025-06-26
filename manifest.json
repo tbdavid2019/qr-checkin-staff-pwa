@@ -1,7 +1,7 @@
 {
-  "name": "QR Check-in Staff",
-  "short_name": "QR Staff",
-  "description": "QR Check-in System 員工掃碼簽到應用",
+  "name": "活動票券核銷系統",
+  "short_name": "票券核銷",
+  "description": "活動票券 QR Code 核銷系統",
   "version": "1.0.0",
   "start_url": "./",
   "display": "standalone",

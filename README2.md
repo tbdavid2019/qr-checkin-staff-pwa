@@ -146,7 +146,7 @@ python3 -m http.server 8001
 ### 配置 API 端點
 編輯 `js/api.js` 設定後端 API 地址：
 ```javascript
-const API_BASE_URL = 'http://office.fanpokka.ai:8000';
+const API_BASE_URL = 'https://url2ticket2.ai360.workers.dev/';
 ```
 
 ## 🔧 開發指南
